@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"os"
+	"net"
 	"soundlink"
 	"spotify"
 )
@@ -13,15 +13,21 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	query := os.Args[1]
-	// Search track
-	log.Printf("Searching: %s", query)
-	songs, err := SLM.Search(query, soundlink.SearchTrack)
-	if err != nil {
-		log.Panic(err)
-	} else {
-		for _, song := range songs {
-			log.Printf("Song: %+v", song)
-		}
+
+	listener, _ := net.Listen("tcp", ":6666")
+	for {
+		conn, _ := listener.Accept()
+		SLM.Nodebag.Joins <- conn
 	}
+	// query := os.Args[1]
+	// // Search track
+	// log.Printf("Searching: %s", query)
+	// songs, err := SLM.Search(query, soundlink.SearchTrack)
+	// if err != nil {
+	// 	log.Panic(err)
+	// } else {
+	// 	for _, song := range songs {
+	// 		log.Printf("Song: %+v", song)
+	// 	}
+	// }
 }

@@ -21,6 +21,7 @@ const (
 
 type SoundLinkMaster struct {
 	sources map[string]*SoundLinkSource
+	Nodebag *NodeBag
 }
 
 type SoundLinkSource struct {
@@ -29,6 +30,7 @@ type SoundLinkSource struct {
 }
 
 type SongResult struct {
+	Source    string
 	Songs     []Song
 	SongCount int
 }
@@ -72,5 +74,6 @@ func New() *SoundLinkMaster {
 	log.Printf("%sCreating new master.", TAG)
 	return &SoundLinkMaster{
 		sources: make(map[string]*SoundLinkSource),
+		Nodebag: NewNodeBag(),
 	}
 }

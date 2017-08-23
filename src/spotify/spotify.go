@@ -21,6 +21,7 @@ func search(query string, searchtype soundlink.SearchType) (*soundlink.SongResul
 	result := &soundlink.SongResult{
 		SongCount: 0,
 		Songs:     make([]soundlink.Song, 0),
+		Source:    SourceName,
 	}
 	if searchtype == soundlink.SearchTrack {
 		if response, err := client.Search(query, spotify.SearchTypeTrack); err == nil {
