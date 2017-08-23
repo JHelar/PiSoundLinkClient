@@ -1,25 +1,27 @@
 package main
 
 import (
+	"log"
+	"os"
 	"soundlink"
 	"spotify"
-	"log"
 )
 
-func main(){
+func main() {
 	SLM := soundlink.New()
 	err := spotify.Register(SLM)
 	if err != nil {
 		log.Panic(err)
 	}
+	query := os.Args[1]
 	// Search track
-	songs, err := SLM.SearchSpecificSource(spotify.SOURCE_NAME, "polis", false, true, false)
+	log.Printf("Searching: %s", query)
+	songs, err := SLM.Search(query, soundlink.SearchTrack)
 	if err != nil {
 		log.Panic(err)
 	} else {
-		log.Printf("Found: %d songs.", songs.SongCount)
-		for _,song := range songs.Songs {
-			log.Printf("Song: %s", song.Name)
+		for _, song := range songs {
+			log.Printf("Song: %+v", song)
 		}
 	}
 }
