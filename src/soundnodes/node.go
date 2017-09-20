@@ -1,4 +1,4 @@
-package soundlink
+package soundnodes
 
 import (
 	"bufio"

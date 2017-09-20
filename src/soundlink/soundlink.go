@@ -1,8 +1,10 @@
 package soundlink
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
+	"soundnodes"
 )
 
 // SearchTypes
@@ -20,8 +22,9 @@ const (
 )
 
 type SoundLinkMaster struct {
-	sources map[string]*SoundLinkSource
-	Nodebag *NodeBag
+	sources       map[string]*SoundLinkSource
+	ClientNodeBag *soundnodes.NodeBag
+	NodesNodeBag  *soundnodes.NodeBag
 }
 
 type SoundLinkSource struct {
@@ -51,7 +54,7 @@ func (slm *SoundLinkMaster) RegisterSource(sourceName string) *SoundLinkSource {
 	return source
 }
 
-func (slm *SoundLinkMaster) Search(query string, st SearchType) ([]*SongResult, error) {
+func (slm *SoundLinkMaster) search(query string, st SearchType) ([]*SongResult, error) {
 	result := make([]*SongResult, 0)
 	for _, source := range slm.sources {
 		if res, err := source.Search(query, st); err == nil {
@@ -63,6 +66,36 @@ func (slm *SoundLinkMaster) Search(query string, st SearchType) ([]*SongResult, 
 	return result, nil
 }
 
+func (slm *SoundLinkMaster) nodeMessageHandler(message soundnodes.NodeMessage) (soundnodes.NodeMessage, error) {
+	return message, nil
+}
+
+func (slm *SoundLinkMaster) clientMessageHandler(message soundnodes.NodeMessage) (soundnodes.NodeMessage, error) {
+	var requestBase soundnodes.Base
+	var err error
+	if err = json.Unmarshal([]byte(message.Message), &requestBase); err == nil {
+		switch requestBase.Type {
+		case "Search":
+			if result, err := slm.search(requestBase.Data["query"], SearchTrack); err == nil {
+				if bytes, err := json.Marshal(result); err == nil {
+					message.Message = string(bytes[:])
+				}
+			}
+			break
+		case "Play":
+			if val, ok := requestBase.Data["nodeid"]; ok {
+				slm.NodesNodeBag.SendRaw(val, message.Message)
+			}
+		default:
+			break
+		}
+	}
+	if err != nil {
+		message.Message = err.Error()
+	}
+	return message, nil
+}
+
 func (slm *SoundLinkMaster) SearchSpecific(sourceName, query string, searchtype SearchType) (*SongResult, error) {
 	if val, ok := slm.sources[sourceName]; ok {
 		return val.Search(query, searchtype)
@@ -72,8 +105,11 @@ func (slm *SoundLinkMaster) SearchSpecific(sourceName, query string, searchtype 
 
 func New() *SoundLinkMaster {
 	log.Printf("%sCreating new master.", TAG)
-	return &SoundLinkMaster{
-		sources: make(map[string]*SoundLinkSource),
-		Nodebag: NewNodeBag(),
+	slm := &SoundLinkMaster{
+		sources:       make(map[string]*SoundLinkSource),
+		ClientNodeBag: soundnodes.NewNodeBag(),
+		NodesNodeBag:  soundnodes.NewNodeBag(),
 	}
+	slm.ClientNodeBag.MessageHandler = slm.clientMessageHandler
+	return slm
 }

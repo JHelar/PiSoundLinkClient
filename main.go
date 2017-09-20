@@ -14,20 +14,19 @@ func main() {
 		log.Panic(err)
 	}
 
-	listener, _ := net.Listen("tcp", ":6666")
+	nodeListener, _ := net.Listen("tcp", ":6666")
+	log.Print("NodeListener Active")
+	go func() {
+		for {
+			conn, _ := nodeListener.Accept()
+			SLM.NodesNodeBag.Joins <- conn
+		}
+	}()
+
+	clientListener, _ := net.Listen("tcp", ":8080")
+	log.Print("ClientListener Active")
 	for {
-		conn, _ := listener.Accept()
-		SLM.Nodebag.Joins <- conn
+		conn, _ := clientListener.Accept()
+		SLM.ClientNodeBag.Joins <- conn
 	}
-	// query := os.Args[1]
-	// // Search track
-	// log.Printf("Searching: %s", query)
-	// songs, err := SLM.Search(query, soundlink.SearchTrack)
-	// if err != nil {
-	// 	log.Panic(err)
-	// } else {
-	// 	for _, song := range songs {
-	// 		log.Printf("Song: %+v", song)
-	// 	}
-	// }
 }
